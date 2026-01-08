@@ -1,6 +1,0 @@
-[submodule "src/vendor/rt_manipulators_cpp"]
-	path = src/vendor/rt_manipulators_cpp
-	url = https://github.com/rt-net/rt_manipulators_cpp.git
-[submodule "src/vendor/DynamixelSDK"]
-	path = src/vendor/DynamixelSDK
-	url = https://github.com/ROBOTIS-GIT/DynamixelSDK.git

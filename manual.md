@@ -26,15 +26,17 @@ python src/main.py
 
 開発環境では、プログラムは/home/sciurus/RT_Sciurus17_MQTT_Controlにインストール済みだが、ここではプログラムをインストールする方法を説明する。
 
-まず、プログラムのレポジトリからクローンする:
+まず、`rt_manipulators_cpp`をインストールする。
+
+`https://github.com/rt-net/rt_manipulators_cpp`の`README.md`に従ってインストールする。
+
+次に、プログラムのレポジトリからクローンする:
 
 ```sh
-git clone -b develop --recurse-submodules https://github.com/t-kubo-tome/RT_Sciurus17_MQTT_Control.git
+git clone https://github.com/t-kubo-tome/RT_Sciurus17_MQTT_Control.git
 ```
 
 レポジトリのパス、ブランチは変更される可能性あり。
-
-`src/vendor/rt_manipulators_cpp/README.md`の手順に従い、`rt_manipulators_cpp`およびその依存ライブラリをビルド・インストールする。
 
 次に、Pythonの仮想環境を作成し、起動しておく。
 
