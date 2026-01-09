@@ -1,35 +1,44 @@
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "rt_manipulators_cpp/hardware.hpp"
 #include "sciurus_robot.hpp"
 
-Robot::Robot(const std::string & ip): ip_(ip) {   
+Robot::Robot(const std::string & port_name): hardware_(port_name) {
 }
 Robot::~Robot() {
   disable();
   disconnect();
 }
-bool Robot::connect() {
-    return true;
+void Robot::connect(int baudrate) {
+  if (!hardware_.connect(baudrate)) {
+    throw std::runtime_error("ロボットとの接続に失敗しました.");
+  }
+  std::string config_file = "config/sciurus17.yaml";
+  if (!hardware_.load_config_file(config_file)) {
+    throw std::runtime_error("コンフィグファイルの読み込みに失敗しました.");
+  }
 } 
-bool Robot::enable() {
-  return true;
+void Robot::disconnect() {
+  hardware_.disconnect();
 }
-bool Robot::move_joint(float j1, float j2, float j3, float j4, float j5, float j6) {
-  return true;
-}
+void Robot::enable() {}
+void Robot::disable() {}
+void Robot::move_joint(std::vector<double> joints) {}
 std::vector<double> Robot::get_current_joint() {
   std::vector<double> ret;
   return ret;
 }
-bool Robot::disable() {
-  return true;
-}
-bool Robot::disconnect() {
-  return true;
+void Robot::enter_servo_mode() {}
+void Robot::leave_servo_mode() {}
+void Robot::move_joint_servo(std::vector<double> joints) {}
+std::vector<double> Robot::get_current_joint_servo() {
+  std::vector<double> ret;
+  return ret;
 }
 
 namespace py = pybind11;
@@ -42,9 +51,13 @@ PYBIND11_MODULE(sciurus_robot, m)
         .def(py::init<const std::string &>(),
              py::arg("ip") = "192.168.5.43")
         .def("connect", &Robot::connect)
+        .def("disconnect", &Robot::disconnect);
         .def("enable", &Robot::enable)
+        .def("disable", &Robot::disable)
         .def("move_joint", &Robot::move_joint)
         .def("get_current_joint", &Robot::get_current_joint)
-        .def("disable", &Robot::disable)
-        .def("disconnect", &Robot::disconnect);
+        .def("enter_servo_mode", &Robot::enter_servo_mode)
+        .def("leave_servo_mode", &Robot::leave_servo_mode)
+        .def("move_joint_servo", &Robot::move_joint_servo)
+        .def("get_current_joint_servo", &Robot::get_current_joint_servo);
 }

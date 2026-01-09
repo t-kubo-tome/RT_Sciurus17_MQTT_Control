@@ -2,17 +2,24 @@
 #include <string>
 #include <vector>
 
+#include "rt_manipulators_cpp/hardware.hpp"
+
+
 class Robot
 {
 public:
-  Robot(const std::string & ip = "192.168.5.43");
+  Robot(const std::string & port_name = "/dev/ttyUSB0");
   ~Robot();
-  bool connect();
-  bool enable();
-  bool move_joint(float j1, float j2, float j3, float j4, float j5, float j6);
+  void connect(int baudrate = 3000000);
+  void disconnect();
+  void enable();
+  void disable();
+  void move_joint(std::vector<double> joints);
   std::vector<double> get_current_joint();
-  bool disable();
-  bool disconnect();
+  void enter_servo_mode();
+  void leave_servo_mode();
+  void move_joint_servo(std::vector<double> joints);
+  std::vector<double> get_current_joint_servo();
 private:
-  std::string ip_;
+  rt_manipulators_cpp::Hardware hardware_;
 };
