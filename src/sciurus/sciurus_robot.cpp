@@ -215,6 +215,9 @@ std::vector<double> Robot::get_current_joint() {
   return ret;
 }
 void Robot::enter_servo_mode() {
+  // 現在の関節角度を目標角度にセットしてからサーボモードに入る
+  auto joint = get_current_joint();
+  move_joint_servo(joint);
   std::vector<std::string> group_names = {
       "right_arm", "right_hand", "left_arm", "left_hand", "torso"};
   if (!hardware.start_thread(group_names, std::chrono::milliseconds(t_samp))) {
