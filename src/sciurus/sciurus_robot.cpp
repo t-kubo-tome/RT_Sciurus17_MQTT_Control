@@ -15,8 +15,6 @@ std::vector<double> slice(const std::vector<double>& v, size_t start, size_t end
 Robot::Robot(const std::string & port_name, int t_samp): hardware(port_name), t_samp(t_samp) {
 }
 Robot::~Robot() {
-  disable();
-  disconnect();
 }
 void Robot::connect(int baudrate) {
   if (!hardware.connect(baudrate)) {
