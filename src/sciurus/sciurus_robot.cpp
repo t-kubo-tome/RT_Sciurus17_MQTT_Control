@@ -27,150 +27,120 @@ void Robot::connect(int baudrate) {
     throw std::runtime_error("コンフィグファイルの読み込みに失敗しました.");
   }
   if (!hardware.write_max_acceleration_to_group("right_arm", 0.5 * M_PI)) {
-    std::cerr << "right_armグループの最大加速度を設定できませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("right_armグループの最大加速度を設定できませんでした.");
   }
   if (!hardware.write_max_velocity_to_group("right_arm", 0.5 * M_PI)) {
-    std::cerr << "right_armグループの最大速度を設定できませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("right_armグループの最大速度を設定できませんでした.");
   }
   if (!hardware.write_max_acceleration_to_group("right_hand", 0.5 * M_PI)) {
-    std::cerr << "right_handグループの最大加速度を設定できませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("right_handグループの最大加速度を設定できませんでした.");
   }
   if (!hardware.write_max_velocity_to_group("right_hand", 0.5 * M_PI)) {
-    std::cerr << "right_handグループの最大速度を設定できませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("right_handグループの最大速度を設定できませんでした.");
   }
   if (!hardware.write_max_acceleration_to_group("left_arm", 0.5 * M_PI)) {
-    std::cerr << "left_armグループの最大加速度を設定できませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("left_armグループの最大加速度を設定できませんでした.");
   }
   if (!hardware.write_max_velocity_to_group("left_arm", 0.5 * M_PI)) {
-    std::cerr << "left_armグループの最大速度を設定できませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("left_armグループの最大速度を設定できませんでした.");
   }
   if (!hardware.write_max_acceleration_to_group("left_hand", 0.5 * M_PI)) {
-    std::cerr << "left_handグループの最大加速度を設定できませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("left_handグループの最大加速度を設定できませんでした.");
   }
   if (!hardware.write_max_velocity_to_group("left_hand", 0.5 * M_PI)) {
-    std::cerr << "left_handグループの最大速度を設定できませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("left_handグループの最大速度を設定できませんでした.");
   }
   if (!hardware.write_max_acceleration_to_group("torso", 0.5 * M_PI)) {
-    std::cerr << "torsoグループの最大加速度を設定できませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("torsoグループの最大加速度を設定できませんでした.");
   }
   if (!hardware.write_max_velocity_to_group("torso", 0.5 * M_PI)) {
-    std::cerr << "torsoグループの最大速度を設定できませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("torsoグループの最大速度を設定できませんでした.");
   }
 
   if (!hardware.write_position_pid_gain_to_group("right_arm", 800, 0, 0)) {
-    std::cerr << "right_armグループにPIDゲインを書き込めませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("right_armグループにPIDゲインを書き込めませんでした.");
   }
   if (!hardware.write_position_pid_gain_to_group("right_hand", 800, 0, 0)) {
-    std::cerr << "right_handグループにPIDゲインを書き込めませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("right_handグループにPIDゲインを書き込めませんでした.");
   }
   if (!hardware.write_position_pid_gain_to_group("left_arm", 800, 0, 0)) {
-    std::cerr << "left_armグループにPIDゲインを書き込めませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("left_armグループにPIDゲインを書き込めませんでした.");
   }
   if (!hardware.write_position_pid_gain_to_group("left_hand", 800, 0, 0)) {
-    std::cerr << "left_handグループにPIDゲインを書き込めませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("left_handグループにPIDゲインを書き込めませんでした.");
   }
   if (!hardware.write_position_pid_gain_to_group("torso", 800, 0, 0)) {
-    std::cerr << "torsoグループにPIDゲインを書き込めませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("torsoグループにPIDゲインを書き込めませんでした.");
   }
-} 
+}
 void Robot::disconnect() {
   hardware.disconnect();
 }
 void Robot::enable() {
   if (!hardware.torque_on("right_arm")) {
-    std::cerr << "right_armグループのトルクをONできませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("right_armグループのトルクをONできませんでした.");
   }
   if (!hardware.torque_on("right_hand")) {
-    std::cerr << "right_handグループのトルクをONできませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("right_handグループのトルクをONできませんでした.");
   }
   if (!hardware.torque_on("left_arm")) {
-    std::cerr << "left_armグループのトルクをONできませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("left_armグループのトルクをONできませんでした.");
   }
   if (!hardware.torque_on("left_hand")) {
-    std::cerr << "left_handグループのトルクをONできませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("left_handグループのトルクをONできませんでした.");
   }
   if (!hardware.torque_on("torso")) {
-    std::cerr << "torsoグループのトルクをONできませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("torsoグループのトルクをONできませんでした.");
   }
 }
 void Robot::disable() {
   if (!hardware.write_position_pid_gain_to_group("right_arm", 5, 0, 0)) {
-    std::cerr << "right_armグループにPIDゲインを書き込めませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("right_armグループにPIDゲインを書き込めませんでした.");
   }
   if (!hardware.write_position_pid_gain_to_group("right_hand", 5, 0, 0)) {
-    std::cerr << "right_handグループにPIDゲインを書き込めませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("right_handグループにPIDゲインを書き込めませんでした.");
   }
   if (!hardware.write_position_pid_gain_to_group("left_arm", 5, 0, 0)) {
-    std::cerr << "left_armグループにPIDゲインを書き込めませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("left_armグループにPIDゲインを書き込めませんでした.");
   }
   if (!hardware.write_position_pid_gain_to_group("left_hand", 5, 0, 0)) {
-    std::cerr << "left_handグループにPIDゲインを書き込めませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("left_handグループにPIDゲインを書き込めませんでした.");
   }
   if (!hardware.write_position_pid_gain_to_group("torso", 5, 0, 0)) {
-    std::cerr << "torsoグループにPIDゲインを書き込めませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("torsoグループにPIDゲインを書き込めませんでした.");
   }
   std::this_thread::sleep_for(std::chrono::seconds(5));
 
   if (!hardware.torque_off("right_arm")) {
-    std::cerr << "right_armグループのトルクをOFFできませんでした." << std::endl;
+    throw std::runtime_error("right_armグループのトルクをOFFできませんでした.");
   }
   if (!hardware.torque_off("right_hand")) {
-    std::cerr << "right_handグループのトルクをOFFできませんでした." << std::endl;
+    throw std::runtime_error("right_handグループのトルクをOFFできませんでした.");
   }
   if (!hardware.torque_off("left_arm")) {
-    std::cerr << "left_armグループのトルクをOFFできませんでした." << std::endl;
+    throw std::runtime_error("left_armグループのトルクをOFFできませんでした.");
   }
   if (!hardware.torque_off("left_hand")) {
-    std::cerr << "left_handグループのトルクをOFFできませんでした." << std::endl;
+    throw std::runtime_error("left_handグループのトルクをOFFできませんでした.");
   }
   if (!hardware.torque_off("torso")) {
-    std::cerr << "torsoグループのトルクをOFFできませんでした." << std::endl;
+    throw std::runtime_error("torsoグループのトルクをOFFできませんでした.");
   }
 
   if (!hardware.write_position_pid_gain_to_group("right_arm", 800, 0, 0)) {
-    std::cerr << "right_armグループにPIDゲインを書き込めませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("right_armグループにPIDゲインを書き込めませんでした.");
   }
   if (!hardware.write_position_pid_gain_to_group("right_hand", 800, 0, 0)) {
-    std::cerr << "right_handグループにPIDゲインを書き込めませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("right_handグループにPIDゲインを書き込めませんでした.");
   }
   if (!hardware.write_position_pid_gain_to_group("left_arm", 800, 0, 0)) {
-    std::cerr << "left_armグループにPIDゲインを書き込めませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("left_armグループにPIDゲインを書き込めませんでした.");
   }
   if (!hardware.write_position_pid_gain_to_group("left_hand", 800, 0, 0)) {
-    std::cerr << "left_handグループにPIDゲインを書き込めませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("left_handグループにPIDゲインを書き込めませんでした.");
   }
   if (!hardware.write_position_pid_gain_to_group("torso", 800, 0, 0)) {
-    std::cerr << "torsoグループにPIDゲインを書き込めませんでした." << std::endl;
-    return -1;
+    throw std::runtime_error("torsoグループにPIDゲインを書き込めませんでした.");
   }
   std::this_thread::sleep_for(std::chrono::seconds(1));
 }
@@ -186,73 +156,58 @@ void Robot::move_joint(std::vector<double> joints, int timeout) {
   hardware.set_positions("left_hand", left_hand);
   hardware.set_positions("torso", torso);
   if (!hardware.sync_write("right_arm")) {
-    std::cerr << "right_armグループのsync writeに失敗しました." << std::endl;
-    return -1;
+    throw std::runtime_error("right_armグループのsync writeに失敗しました.");
   }
   if (!hardware.sync_write("right_hand")) {
-    std::cerr << "right_handグループのsync writeに失敗しました." << std::endl;
-    return -1;
+    throw std::runtime_error("right_handグループのsync writeに失敗しました.");
   }
   if (!hardware.sync_write("left_arm")) {
-    std::cerr << "left_armグループのsync writeに失敗しました." << std::endl;
-    return -1;
+    throw std::runtime_error("left_armグループのsync writeに失敗しました.");
   }
   if (!hardware.sync_write("left_hand")) {
-    std::cerr << "left_handグループのsync writeに失敗しました." << std::endl;
-    return -1;
+    throw std::runtime_error("left_handグループのsync writeに失敗しました.");
   }
   if (!hardware.sync_write("torso")) {
-    std::cerr << "torsoグループのsync writeに失敗しました." << std::endl;
-    return -1;
+    throw std::runtime_error("torsoグループのsync writeに失敗しました.");
   }
   std::this_thread::sleep_for(std::chrono::seconds(timeout));
 }
 std::vector<double> Robot::get_current_joint() {
   std::vector<double> ret;
   if (!hardware.sync_read("right_arm")) {
-    std::cerr << "right_armグループのsync readに失敗しました." << std::endl;
-    break;
+    throw std::runtime_error("right_armグループのsync readに失敗しました.");
   }
   if (!hardware.sync_read("right_hand")) {
-    std::cerr << "right_handグループのsync readに失敗しました." << std::endl;
-    break;
+    throw std::runtime_error("right_handグループのsync readに失敗しました.");
   }
   if (!hardware.sync_read("left_arm")) {
-    std::cerr << "left_armグループのsync readに失敗しました." << std::endl;
-    break;
+    throw std::runtime_error("left_armグループのsync readに失敗しました.");
   }
   if (!hardware.sync_read("left_hand")) {
-    std::cerr << "left_handグループのsync readに失敗しました." << std::endl;
-    break;
+    throw std::runtime_error("left_handグループのsync readに失敗しました.");
   }
   if (!hardware.sync_read("torso")) {
-    std::cerr << "torsoグループのsync readに失敗しました." << std::endl;
-    break;
+    throw std::runtime_error("torsoグループのsync readに失敗しました.");
   }
   std::vector<double> right_arm_positions;
   if (!hardware.get_positions("right_arm", right_arm_positions)) {
-    std::cerr << "right_armグループのサーボ角度の取得に失敗しました." << std::endl;
-    break;
+    throw std::runtime_error("right_armグループのサーボ角度の取得に失敗しました.");
   }
   std::vector<double> right_hand_positions;
   if (!hardware.get_positions("right_hand", right_hand_positions)) {
-    std::cerr << "right_handグループのサーボ角度の取得に失敗しました." << std::endl;
-    break;
+    throw std::runtime_error("right_handグループのサーボ角度の取得に失敗しました.");
   }
   std::vector<double> left_arm_positions;
   if (!hardware.get_positions("left_arm", left_arm_positions)) {
-    std::cerr << "left_armグループのサーボ角度の取得に失敗しました." << std::endl;
-    break;
+    throw std::runtime_error("left_armグループのサーボ角度の取得に失敗しました.");
   }
   std::vector<double> left_hand_positions;
   if (!hardware.get_positions("left_hand", left_hand_positions)) {
-    std::cerr << "left_handグループのサーボ角度の取得に失敗しました." << std::endl;
-    break;
+    throw std::runtime_error("left_handグループのサーボ角度の取得に失敗しました.");
   }
   std::vector<double> torso_positions;
   if (!hardware.get_positions("torso", torso_positions)) {
-    std::cerr << "torsoグループのサーボ角度の取得に失敗しました." << std::endl;
-    break;
+    throw std::runtime_error("torsoグループのサーボ角度の取得に失敗しました.");
   }
   ret.insert(ret.end(), right_arm_positions.begin(), right_arm_positions.end());
   ret.insert(ret.end(), right_hand_positions.begin(), right_hand_positions.end());
@@ -265,8 +220,7 @@ void Robot::enter_servo_mode() {
   std::vector<std::string> group_names = {
       "right_arm", "right_hand", "left_arm", "left_hand", "torso"};
   if (!hardware.start_thread(group_names, std::chrono::milliseconds(t_samp))) {
-    std::cerr << "スレッドの起動に失敗しました." << std::endl;
-    return -1;
+    throw std::runtime_error("スレッドの起動に失敗しました.");
   }
 }
 void Robot::leave_servo_mode() {
@@ -288,28 +242,23 @@ std::vector<double> Robot::get_current_joint_servo() {
   std::vector<double> ret;
   std::vector<double> right_arm_positions;
   if (!hardware.get_positions("right_arm", right_arm_positions)) {
-    std::cerr << "right_armグループのサーボ角度の取得に失敗しました." << std::endl;
-    break;
+    throw std::runtime_error("right_armグループのサーボ角度の取得に失敗しました.");
   }
   std::vector<double> right_hand_positions;
   if (!hardware.get_positions("right_hand", right_hand_positions)) {
-    std::cerr << "right_handグループのサーボ角度の取得に失敗しました." << std::endl;
-    break;
+    throw std::runtime_error("right_handグループのサーボ角度の取得に失敗しました.");
   }
   std::vector<double> left_arm_positions;
   if (!hardware.get_positions("left_arm", left_arm_positions)) {
-    std::cerr << "left_armグループのサーボ角度の取得に失敗しました." << std::endl;
-    break;
+    throw std::runtime_error("left_armグループのサーボ角度の取得に失敗しました.");
   }
   std::vector<double> left_hand_positions;
   if (!hardware.get_positions("left_hand", left_hand_positions)) {
-    std::cerr << "left_handグループのサーボ角度の取得に失敗しました." << std::endl;
-    break;
+    throw std::runtime_error("left_handグループのサーボ角度の取得に失敗しました.");
   }
   std::vector<double> torso_positions;
   if (!hardware.get_positions("torso", torso_positions)) {
-    std::cerr << "torsoグループのサーボ角度の取得に失敗しました." << std::endl;
-    break;
+    throw std::runtime_error("torsoグループのサーボ角度の取得に失敗しました.");
   }
   ret.insert(ret.end(), right_arm_positions.begin(), right_arm_positions.end());
   ret.insert(ret.end(), right_hand_positions.begin(), right_hand_positions.end());
