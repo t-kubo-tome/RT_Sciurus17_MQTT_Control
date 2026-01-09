@@ -12,9 +12,9 @@ from typing import Optional
 
 import numpy as np
 
-from doosan.doosan_mqtt_control import ProcessManager
-from doosan.config import SHM_NAME, SHM_SIZE
-from doosan.doosan_tools import tool_infos
+from sciurus.sciurus_mqtt_control import ProcessManager
+from sciurus.config import SHM_NAME, SHM_SIZE
+from sciurus.sciurus_tools import tool_infos
 
 
 tool_ids = [tool_info["id"] for tool_info in tool_infos]
@@ -174,7 +174,7 @@ class MQTTTargetReplayer:
                 break
         if ret:
             self._replay()
-        # Doosanでは毎回disableしなくてもいい
+        # Sciurusでは毎回disableしなくてもいい
         # self.pm.disable()
         self.pm.stop_all_processes()
         # TODO: Hanging here

@@ -1,4 +1,4 @@
-# DoosanをMQTTで制御する
+# SciurusをMQTTで制御する
 
 import multiprocessing
 import multiprocessing.shared_memory
@@ -7,8 +7,8 @@ from multiprocessing import Process
 import numpy as np
 
 from .config import SHM_NAME, SHM_SIZE, ROBOT_NAME
-from .doosan_control import Doosan_CON, Doosan_CON_Archiver
-from .doosan_monitor import Doosan_MON
+from .sciurus_control import Sciurus_CON, Sciurus_CON_Archiver
+from .sciurus_monitor import Sciurus_MON
 from .monitor_gui import run_joint_monitor_gui
 from .mqtt_recv import MQTT_Recv
 
@@ -87,7 +87,7 @@ class ProcessManager:
         self.state_recv_mqtt = True
 
     def startMonitor(self, logging_dir: str | None = None, disable_mqtt: bool = False):
-        self.mon = Doosan_MON()
+        self.mon = Sciurus_MON()
         self.monP = Process(
             target=self.mon.run_proc,
             args=(self.monitor_dict,
@@ -103,7 +103,7 @@ class ProcessManager:
         self.state_monitor = True
 
     def startControl(self, logging_dir: str | None = None):
-        self.ctrl = Doosan_CON()
+        self.ctrl = Sciurus_CON()
         self.ctrlP = Process(
             target=self.ctrl.run_proc,
             args=(self.control_pipe,
@@ -116,7 +116,7 @@ class ProcessManager:
             name=f"{ROBOT_NAME}-control")
         self.ctrlP.start()
 
-        self.ctrl_archiver = Doosan_CON_Archiver()
+        self.ctrl_archiver = Sciurus_CON_Archiver()
         self.ctrl_archiverP = Process(
             target=self.ctrl_archiver.run_proc,
             args=(self.control_archiver_pipe,

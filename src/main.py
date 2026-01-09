@@ -10,9 +10,9 @@ import multiprocessing
 from tkinter import scrolledtext
 from typing import Optional
 
-from doosan.config import ROBOT_NAME
-from doosan.doosan_mqtt_control import ProcessManager
-from doosan.doosan_tools import tool_infos
+from sciurus.config import ROBOT_NAME
+from sciurus.sciurus_mqtt_control import ProcessManager
+from sciurus.sciurus_tools import tool_infos
 
 
 tool_ids = [tool_info["id"] for tool_info in tool_infos]
@@ -941,7 +941,7 @@ if __name__ == '__main__':
     # ファイルの情報が正確かいまのところ保証できないので、指定してもらう
     import argparse
     parser = argparse.ArgumentParser()
-    # NOTE: Doosanでは現状1つのツールに対応
+    # NOTE: Sciurusでは現状1つのツールに対応
     # parser.add_argument(
     #     "--tool-id",
     #     type=int,

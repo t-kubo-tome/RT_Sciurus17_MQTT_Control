@@ -1,4 +1,4 @@
-# Doosanを制御する
+# Sciurusを制御する
 
 import logging
 import queue
@@ -25,9 +25,9 @@ from .interpolate import DelayedInterpolator
 
 # Robot specific modules
 from .config import SHM_NAME, SHM_SIZE, ABS_JOINT_LIMIT, T_INTV
-from .doosan_monitor import MQTT_ROBOT_STATE_TOPIC
-from .doosan_robot import DoosanRobot, ROBOT_STATE
-from .doosan_tools import tool_infos, tool_classes, tool_base
+from .sciurus_monitor import MQTT_ROBOT_STATE_TOPIC
+from .sciurus_robot import SciurusRobot, ROBOT_STATE
+from .sciurus_tools import tool_infos, tool_classes, tool_base
 
 
 # パラメータ
@@ -149,17 +149,17 @@ class StopWatch:
         return s
 
 
-class Doosan_CON:
+class Sciurus_CON:
     def __init__(self):
         self.default_joint = default_joints["vr5"]
         self.tidy_joint = default_joints["tidy"]
-        self.robot: DoosanRobot | None = None
+        self.robot: SciurusRobot | None = None
 
     def init_robot(self):
         # ロボット固有の処理を含む
         try:
             if self.robot is None:
-                self.robot = DoosanRobot(ROBOT_IP, "queue")
+                self.robot = SciurusRobot(ROBOT_IP, "queue")
                 self.init_robot_log_loop()
                 if not self.robot.start():
                     raise ValueError("Failed to start robot")
@@ -303,7 +303,7 @@ class Doosan_CON:
             # スレーブモードかどうかを取得する
             is_in_servo_mode = False
             try:
-                # NOTE: Doosanではスレーブモードの状態はAPIでは不明なので制御値を使用
+                # NOTE: Sciurusではスレーブモードの状態はAPIでは不明なので制御値を使用
                 is_in_servo_mode = bool(self.pose[14])
             except Exception as e:
                 self.logger.error(f"{self.format_error(e)}")
@@ -2124,7 +2124,7 @@ class Doosan_CON:
                 break
 
 
-class Doosan_CON_Archiver:
+class Sciurus_CON_Archiver:
     def monitor_start(self, f: TextIO | None = None):
         while True:
             # ログファイル変更時

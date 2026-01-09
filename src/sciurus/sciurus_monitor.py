@@ -1,4 +1,4 @@
-# Doosanの状態をモニタリングする
+# Sciurusの状態をモニタリングする
 
 from enum import auto, Enum
 import logging
@@ -19,7 +19,7 @@ import numpy as np
 from dotenv import load_dotenv
 
 from .config import SHM_NAME, SHM_SIZE, T_INTV
-from .doosan_tools import tool_infos, tool_classes
+from .sciurus_tools import tool_infos, tool_classes
 # Robot specific modules
 
 
@@ -43,7 +43,7 @@ class LoopResult(Enum):
     LOG_FILE_CHANGED = auto()
 
 
-class Doosan_MON:
+class Sciurus_MON:
     def __init__(self):
         pass
 
@@ -227,7 +227,7 @@ class Doosan_MON:
 
 
 if __name__ == '__main__':
-    cp = Doosan_MON()
+    cp = Sciurus_MON()
     cp.init_realtime()
     cp.init_robot()
     cp.connect_mqtt()
