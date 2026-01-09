@@ -275,13 +275,17 @@ PYBIND11_MODULE(sciurus_robot, m)
     m.doc() = "pybind11 example plugin";
 
     py::class_<Robot>(m, "SciurusRobot")
-        .def(py::init<const std::string &>(),
-             py::arg("ip") = "192.168.5.43")
-        .def("connect", &Robot::connect)
-        .def("disconnect", &Robot::disconnect);
+        .def(py::init<const std::string &, int>(),
+             py::arg("port_name") = "/dev/ttyUSB0",
+             py::arg("t_samp") = 10)
+        .def("connect", &Robot::connect,
+             py::arg("baudrate") = 3000000)
+        .def("disconnect", &Robot::disconnect)
         .def("enable", &Robot::enable)
         .def("disable", &Robot::disable)
-        .def("move_joint", &Robot::move_joint)
+        .def("move_joint", &Robot::move_joint,
+             py::arg("joints"),
+             py::arg("timeout") = 5)
         .def("get_current_joint", &Robot::get_current_joint)
         .def("enter_servo_mode", &Robot::enter_servo_mode)
         .def("leave_servo_mode", &Robot::leave_servo_mode)
