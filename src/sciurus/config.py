@@ -1,0 +1,5 @@
+SHM_NAME = "doosan"
+SHM_SIZE = 64
+ABS_JOINT_LIMIT = [360, 95, 135, 360, 135, 360]
+T_INTV = 0.008
+ROBOT_NAME = "Doosan"
