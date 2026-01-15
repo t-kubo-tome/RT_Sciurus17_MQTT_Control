@@ -82,6 +82,8 @@ class MQTT_Recv:
         if msg.topic == self.mqtt_ctrl_topic:
             js = json.loads(msg.payload)
 
+            # TODO: 追加関節対応
+            raise NotImplementedError("追加関節対応が未実装です")
             joints=['j1','j2','j3','j4','j5','j6']
             rot =[js[x]  for x in joints]    
             joint_q = [x for x in rot]

@@ -50,6 +50,10 @@ class ProcessManager:
         # [41]: ツールチェンジなど後の制御可能フラグ。0: 制御不可。1: 制御可能
         # [42:48]: TCP姿勢
         # [48]: TCP姿勢受信フラグ。0: 未受信。1: 受信済み
+        # [49]: モーターの電源がONか。0: OFF。1: ON
+        # [50:63]: 追加関節の状態値
+        # [63:76]: 追加関節の目標値
+        # [76:89]: 追加関節の制御値
         self.ar = np.ndarray((SHM_SIZE,), dtype=np.dtype("float32"), buffer=self.sm.buf) # 共有メモリ上の Array
         self.ar[:] = 0
         self.manager = multiprocessing.Manager()

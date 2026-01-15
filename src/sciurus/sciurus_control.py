@@ -18,13 +18,14 @@ import threading
 import modern_robotics as mr
 import numpy as np
 from dotenv import load_dotenv
+from sciurus.utils import deg2rad_list, rad2deg_list
 
 # Robot shared modules
 from .filter import SMAFilter
 from .interpolate import DelayedInterpolator
 
 # Robot specific modules
-from .config import SHM_NAME, SHM_SIZE, ABS_JOINT_LIMIT, T_INTV
+from .config import N_JOINTS, SHM_NAME, SHM_SIZE, ABS_JOINT_LIMIT, T_INTV
 from .sciurus_monitor import MQTT_ROBOT_STATE_TOPIC
 from .sciurus_robot import SciurusRobot, ROBOT_STATE
 from .sciurus_tools import tool_infos, tool_classes, tool_base
@@ -57,11 +58,9 @@ filter_kind: Literal[
     "none",
     "filter_target_from_target_but_diff_from_control"
 ] = "filter_target_from_target_but_diff_from_control"  # "original"
-speed_limits = np.array([180, 180, 180, 360, 360, 360])
+speed_limits = np.full((N_JOINTS,), 90)
 speed_limit_ratio = 0.35
-# NOTE: 加速度制限。スマートTPの最大加速度設定は単位が[rev/s^2]だが、[deg/s^2]とみなして、
-# その値をここで設定すると、エラーが起きにくくなる (観測範囲でエラーがなくなった)
-accel_limits = np.array([360, 360, 360, 720, 720, 720])
+accel_limits = np.full((N_JOINTS,), 90)
 accel_limit_ratio = 0.35
 stopped_velocity_eps = 1e-4
 servo_mode = 0x202
@@ -99,10 +98,10 @@ speed_normal = 20
 speed_tool_change = 2
 # 目標値が状態値よりこの制限より大きく乖離した場合はロボットを停止させる
 # 設定値は典型的なVRコントローラの動きから決定した
-target_state_abs_joint_diff_limit = [30, 30, 40, 40, 40, 60]
+target_state_abs_joint_diff_limit = [45] * N_JOINTS
 use_first_speed_limit = False
 use_second_speed_limit = False
-control_interface: Literal["position", "velocity"] = "velocity"
+control_interface: Literal["position", "velocity"] = "position"
 save_control = SAVE
 
 
@@ -160,9 +159,7 @@ class Sciurus_CON:
         try:
             if self.robot is None:
                 self.robot = SciurusRobot(ROBOT_IP, "queue")
-                self.init_robot_log_loop()
-                if not self.robot.start():
-                    raise ValueError("Failed to start robot")
+                self.robot.connect()
                 self.init_monitor_loop()
             tool_id = int(os.environ["TOOL_ID"])
             self.find_and_setup_hand(tool_id)
@@ -170,43 +167,6 @@ class Sciurus_CON:
             self.logger.error("Error in initializing robot: ")
             self.logger.error(f"{self.format_error(e)}")
 
-    def init_robot_log_loop(self):
-        self.robot_log_thread = threading.Thread(
-            target=self.robot_log_loop)
-        self.robot_log_thread.start()
-
-    def del_robot_log(self):
-        if hasattr(self, 'robot_log_thread'):
-            self.robot_log_thread.join()
-
-    def robot_log_loop(self):
-        while True:
-            log_block = self.robot.pop_log_queue()
-            if len(log_block) == 0:
-                time.sleep(0.01)
-                continue
-            for log in log_block:
-                # log is a tuple: (timestamp, level, message)
-                timestamp, level, message = log                
-                # ログレコードを手動で作成してタイムスタンプを反映
-                log_record = logging.LogRecord(
-                    name=self.robot_logger.name,
-                    level=getattr(logging, level, logging.INFO),
-                    pathname="",
-                    lineno=0,
-                    msg=message,
-                    args=(),
-                    exc_info=None
-                )
-                # タイムスタンプを設定（Unix timestamp）
-                log_record.created = timestamp
-                log_record.msecs = (timestamp - int(timestamp)) * 1000
-                # ログレコードをハンドラーに直接渡す
-                self.robot_logger.handle(log_record)
-                time.sleep(0.01)
-            if self.pose[32] == 1:
-                break
-    
     def init_monitor_loop(self):
         self.monitor_thread = threading.Thread(
             target=self.monitor_loop)
@@ -215,6 +175,27 @@ class Sciurus_CON:
     def del_monitor_loop(self):
         if hasattr(self, 'monitor_thread'):
             self.monitor_thread.join()
+
+    def get_state_joint_memory(self) -> np.ndarray:
+        return np.concatenate([self.pose[:6].copy(), self.pose[50:63].copy()])
+
+    def set_state_joint_memory(self, joint: np.ndarray) -> None:
+        self.pose[:6] = joint[:6]
+        self.pose[50:63] = joint[6:19]
+
+    def get_target_joint_memory(self) -> np.ndarray:
+        return np.concatenate([self.pose[6:12].copy(), self.pose[63:76].copy()])
+    
+    def set_target_joint_memory(self, joint: np.ndarray) -> None:
+        self.pose[6:12] = joint[:6]
+        self.pose[63:76] = joint[6:19]
+    
+    def get_control_joint_memory(self) -> np.ndarray:
+        return np.concatenate([self.pose[24:30].copy(), self.pose[76:89].copy()])
+
+    def set_control_joint_memory(self, joint: np.ndarray) -> None:
+        self.pose[24:30] = joint[:6]
+        self.pose[76:89] = joint[6:19]
 
     def monitor_loop(self):
         # ロボット固有の処理を含む
@@ -238,60 +219,23 @@ class Sciurus_CON:
                 self.logger.info("Health check: Robot monitor is running")
 
             actual_joint_js = {}
-
-            # TCP姿勢
-            try:
-                actual_tcp_pose = self.robot.get_current_pose_rt()[1:]
-            except Exception as e:
-                self.logger.error(f"{self.format_error(e)}")
-                actual_tcp_pose = None
             # 関節
             try:
-                actual_joint = self.robot.get_current_joint_rt()[1:]
+                actual_joint = rad2deg_list(self.robot.get_current_joint())
             except Exception as e:
                 self.logger.error(f"{self.format_error(e)}")
-                actual_joint = None
-            # 起動時など両方0になるときがあるがそのような場合は無効なデータが入っている
-            if np.sum(actual_tcp_pose) == 0 and np.sum(actual_joint) == 0:
-                actual_tcp_pose = None
                 actual_joint = None
 
             if actual_joint is not None:
-                self.pose[:6] = actual_joint
+                self.set_state_joint_memory(actual_joint)
                 self.pose[19] = 1
-                actual_joint_js["joints"] = list(actual_joint) + [0]
-
-            if actual_tcp_pose is not None:
-                self.pose[42:48] = actual_tcp_pose
-                self.pose[48] = 1
-                actual_joint_js["poses"] = actual_tcp_pose
+                actual_joint_js["joints"] = list(actual_joint)
 
             actual_joint_js["time"] = now
 
-            # [X, Y, Z, RX, RY, RZ]: センサ値の力[N]とモーメント[Nm]
-            try:
-                forces = self.robot.get_current_external_tcp_force_rt()[1:]
-            except Exception as e:
-                self.logger.error(f"{self.format_error(e)}")
-                forces = None
-            if forces is not None:
-                actual_joint_js["forces"] = forces
-
-            # TODO: tool            
-
-            # 1つの関数で複数の情報をまとめて取得
-            robot_state = self.robot.get_robot_state()
             # モーターの電源がONか
-            enabled = False
-            try:
-                enabled = robot_state in [
-                    ROBOT_STATE.STATE_STANDBY,
-                    ROBOT_STATE.STATE_MOVING,
-                    ROBOT_STATE.STATE_TEACHING,
-                    ROBOT_STATE.STATE_HOMMING,
-                ]
-            except Exception as e:
-                self.logger.error(f"{self.format_error(e)}")
+            # NOTE: Sciurusではモーターの電源の状態はAPIでは不明なので制御値を使用
+            enabled = bool(self.pose[49])
             if enabled != last_enabled:
                 if enabled:
                     self.logger.info("Robot is enabled")
@@ -301,12 +245,8 @@ class Sciurus_CON:
             actual_joint_js["enabled"] = enabled
 
             # スレーブモードかどうかを取得する
-            is_in_servo_mode = False
-            try:
-                # NOTE: Sciurusではスレーブモードの状態はAPIでは不明なので制御値を使用
-                is_in_servo_mode = bool(self.pose[14])
-            except Exception as e:
-                self.logger.error(f"{self.format_error(e)}")
+            # NOTE: Sciurusではスレーブモードの状態はAPIでは不明なので制御値を使用
+            is_in_servo_mode = bool(self.pose[14])
             # 切り替わるときにログを出す
             if  is_in_servo_mode != last_is_in_servo_mode:
                 if is_in_servo_mode:
@@ -318,12 +258,8 @@ class Sciurus_CON:
             self.pose[37] = int(is_in_servo_mode)
 
             # 緊急停止状態かどうかを取得する
+            # TODO: どのように取得するか検討する
             is_emergency_stopped = False
-            try:
-                is_emergency_stopped = \
-                    robot_state == ROBOT_STATE.STATE_EMERGENCY_STOP
-            except Exception as e:
-                self.logger.error(f"{self.format_error(e)}")
             # 切り替わるときにログを出す
             if is_emergency_stopped != last_is_emergency_stopped:
                 if is_emergency_stopped:
@@ -336,12 +272,8 @@ class Sciurus_CON:
 
             error = {}
             try:
-                is_normal_mode = robot_state not in [
-                    # ROBOT_STATE.STATE_SAFE_OFF,
-                    ROBOT_STATE.STATE_SAFE_STOP,
-                    ROBOT_STATE.STATE_SAFE_OFF2,
-                    ROBOT_STATE.STATE_SAFE_STOP2,
-                ]
+                # TODO: ロボット固有のエラー取得処理を実装する
+                is_normal_mode = True
                 if not is_normal_mode:
                     errors = [{"error_code": 0,
                                "error_message": "Robot state is not NORMAL"}]
@@ -603,10 +535,10 @@ class Sciurus_CON:
             #     continue
 
             # 関節の状態値
-            state = self.pose[:6].copy()
+            state = self.get_state_joint_memory()
 
             # 目標値
-            target = self.pose[6:12].copy()
+            target = self.get_target_joint_memory()
             sw.lap("Check target")
             target_raw = target
 
@@ -693,7 +625,7 @@ class Sciurus_CON:
                     _filter = SMAFilter(n_windows=n_windows)
                     _filter.reset(state)
                 elif filter_kind == "feedback_pd_traj":
-                    N = 6
+                    N = N_JOINTS
                     Tf = t_intv * (N - 1)
                     method = 5
                     Kp = 0.6
@@ -704,12 +636,12 @@ class Sciurus_CON:
                     self.last_control = state
 
                 # 速度制限をフィルタの手前にも入れてみる
-                self.last_target_delayed_velocity = np.zeros(6)
+                self.last_target_delayed_velocity = np.zeros(N_JOINTS)
 
                 if filter_kind == "feedback_pd_traj":
-                    self.last_control_velocity = np.zeros((N - 1, 6))
+                    self.last_control_velocity = np.zeros((N - 1, N_JOINTS))
                 else:
-                    self.last_control_velocity = np.zeros(6)
+                    self.last_control_velocity = np.zeros(N_JOINTS)
                 # ロボットにコマンドを送る前は、非常停止が押されているかを
                 # スレーブモードが解除されているかで確認する
                 if self.pose[37] != 1:
@@ -856,7 +788,7 @@ class Sciurus_CON:
                     )
                     # 速度制限
                     dt = t_intv
-                    # [N - 1, 6]
+                    # [N - 1, N_JOINTS]
                     target_diffs = np.diff(target_steps, axis=0)
                     vs = target_diffs / dt
                     ratios = np.abs(vs) / (speed_limit_ratio * speed_limits)[None, :]
@@ -865,15 +797,15 @@ class Sciurus_CON:
                         vs /= max_ratio
 
                     # 加速度制限
-                    # [N, 6]
+                    # [N, N_JOINTS]
                     vs_ = np.concatenate([self.last_control_velocity[[-1], :], vs], axis=0)
-                    # [N - 1, 6]
+                    # [N - 1, N_JOINTS]
                     as_ = np.diff(vs_, axis=0) / dt
                     accel_ratios = np.abs(as_) / (accel_limit_ratio * accel_limits)[None, :]
                     accel_max_ratio = np.max(accel_ratios)
                     if accel_max_ratio > 1:
                         as_ /= accel_max_ratio
-                    # [N - 1, 6]
+                    # [N - 1, N_JOINTS]
                     vs_ = vs_[0][None, :] + np.cumsum(as_, axis=0) * dt
 
                     target_diffs_speed_limited = vs_ * dt
@@ -886,7 +818,7 @@ class Sciurus_CON:
                                 target_diffs_speed_limited[i])
                             vs_[i] = target_diffs_speed_limited[i] / dt
 
-                    # [N - 1, 6]
+                    # [N - 1, N_JOINTS]
                     target_steps_speed_limited = target_steps[0][None, :] + np.cumsum(vs_, axis=0) * dt
                     self.last_control_velocity = vs_
 
@@ -961,7 +893,7 @@ class Sciurus_CON:
                 raise ValueError
 
             sw.lap("Put control to shared memory")
-            self.pose[24:30] = control
+            self.set_control_joint_memory(control)
 
             sw.lap("Save control - gather data")
             # 分析用データ保存
@@ -1066,7 +998,19 @@ class Sciurus_CON:
         error_event,
         stop_event,
     ) -> bool:
-        return False
+        assert self.robot is not None
+        # ロボット固有の処理を含む
+        try:
+            self.robot.move_joint_servo(deg2rad_list(control))
+            return True
+        except Exception as e:
+            with lock:
+                error_info['kind'] = "robot"
+                error_info['msg'] = str(e)
+                error_info['exception'] = e
+            error_event.set()
+            stop_event.set()
+            return False
 
     def move_joint_servo_by_vel(
         self,
@@ -1076,18 +1020,7 @@ class Sciurus_CON:
         error_event,
         stop_event,
     ) -> bool:
-        assert self.robot is not None
-        # ロボット固有の処理を含む
-        is_success = self.robot.move_joint_servo_by_vel(*control)
-        if not is_success:
-            msg = "Failed to send servoJ command"
-            with lock:
-                error_info['kind'] = "robot"
-                error_info['msg'] = msg
-                error_info['exception'] = ValueError(msg)
-            error_event.set()
-            stop_event.set()
-        return is_success
+        raise NotImplementedError
 
     def on_step_start_in_control_loop(self) -> None:
         pass
@@ -1111,13 +1044,11 @@ class Sciurus_CON:
     def enable(self) -> bool:
         self.logger.info("Enabling robot")
         try:
-            if not self.robot.enable():
-                raise ValueError("Failed to enable robot")
+            self.robot.enable()
+            return True
         except Exception as e:
             self.logger.error("Error enabling robot")
             self.logger.error(f"{self.format_error(e)}")
-            if "ur_rtde: Failed to start control script, before timeout of 5 seconds" in str(e):
-                self.logger.error("This error may occur occasionally. Try enabling several times before giving up")
             return False
 
     def disable(self) -> None:
@@ -1133,18 +1064,14 @@ class Sciurus_CON:
 
     def tidy_pose(self) -> None:
         try:
-            ret = self.robot.move_joint(*self.tidy_joint)
-            if not ret:
-                raise ValueError("Failed to move to tidy pose")
+            self.robot.move_joint(deg2rad_list(self.tidy_joint))
         except Exception as e:
             self.logger.error("Error moving to tidy pose")
             self.logger.error(f"{self.format_error(e)}")
 
     def move_joint(self, joints: List[float]) -> None:
         try:
-            ret = self.robot.move_joint(*joints)
-            if not ret:
-                raise ValueError("Failed to move to joint pose")
+            self.robot.move_joint(deg2rad_list(joints))
         except Exception as e:
             self.logger.error("Error moving to joint pose")
             self.logger.error(f"{self.format_error(e)}")
@@ -1163,13 +1090,25 @@ class Sciurus_CON:
         # 順番固定
         with self.slave_mode_lock:
             self.pose[14] = 1
+            try:
+                self.robot.enter_servo_mode()
+            except Exception as e:
+                self.logger.error("Error entering servo mode")
+                self.logger.error(f"{self.format_error(e)}")
+                self.pose[14] = 0
 
     def leave_servo_mode(self):
         # self.pose[14]は0のとき必ず通常モード。
         # self.pose[14]は1のとき基本的にスレーブモードだが、
         # 変化前後の短い時間は通常モードの可能性がある。
         # 順番固定
-        self.pose[14] = 0
+        with self.slave_mode_lock:
+            try:
+                self.robot.leave_servo_mode()
+                self.pose[14] = 0
+            except Exception as e:
+                self.logger.error("Error leaving servo mode")
+                self.logger.error(f"{self.format_error(e)}")
 
     def should_recover_automatic_on_timeout_error(self, e_leave) -> bool:
         # ロボット固有の処理を含む
@@ -1183,17 +1122,9 @@ class Sciurus_CON:
 
     def recover_automatic_on_recoverable_error(self) -> bool:
         try:
-            self.robot.recover_from_recoverable_robot_state()
-            ret = self.enable()
-            if ret:
-                # 自動復帰可能エラー 
-                self.logger.info("Automatic recover succeeded")
-                return True
-            else:
-                # 自動復帰不可能エラー
-                self.logger.error(
-                    "Error is not automatically recoverable")
-                return False
+            self.enable()
+            self.logger.info("Automatic recover succeeded")
+            return True
         except Exception as e_recover:
             self.logger.error("Error during automatic recover")
             self.logger.error(f"{self.format_error(e_recover)}")
@@ -1493,7 +1424,7 @@ class Sciurus_CON:
             if self.pose[19] != 1:
                 raise ValueError("Joint jog requires joint state to be monitored but currently not")
             # joint state
-            joints = self.pose[:6].copy()
+            joints = self.get_state_joint_memory()
             joints = np.asarray(joints)
             joints[joint] += direction
             joints = joints.tolist()
