@@ -74,7 +74,7 @@ if servo_mode == 0x102:
     t_intv = 0.004
 else:
     t_intv = T_INTV
-# TODO: May multiply 0
+# t_intvが0.008より大きい場合はn_windowsが0になってしまうので
 # n_windows *= int(0.008 / t_intv)
 reset_default_state = True
 default_joints = {
@@ -274,7 +274,7 @@ class Sciurus_CON:
             self.pose[37] = int(is_in_servo_mode)
 
             # 緊急停止状態かどうかを取得する
-            # TODO: どのように取得するか検討する
+            # NOTE: Sciurusでは取得できない
             is_emergency_stopped = False
             # 切り替わるときにログを出す
             if is_emergency_stopped != last_is_emergency_stopped:

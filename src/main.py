@@ -185,7 +185,7 @@ class MQTTWin:
 
         self.button["ReleaseHand"] = tk.Button(self.root, text="ReleaseHand", padx=5,
                       command=self.ReleaseHand, state="disabled")
-        self.button["ReleaseHand"].grid(row=row,column=4,padx=2,pady=2,sticky="ew", columnspan=2)
+        # self.button["ReleaseHand"].grid(row=row,column=4,padx=2,pady=2,sticky="ew", columnspan=2)
 
         self.button["LineCut"] = tk.Button(self.root, text="LineCut", padx=5,
                       command=self.LineCut, state="disabled")
@@ -216,7 +216,7 @@ class MQTTWin:
 
         self.button["ClearError"] = tk.Button(self.root, text="ClearError", padx=5,
                       command=self.ClearError, state="disabled")
-        self.button["ClearError"].grid(row=row,column=4,padx=2,pady=2,sticky="ew", columnspan=2)
+        # self.button["ClearError"].grid(row=row,column=4,padx=2,pady=2,sticky="ew", columnspan=2)
 
         self.frame_error = tk.Frame(self.root)
         self.frame_error.grid(row=row,column=8,padx=2,pady=2,sticky="w", columnspan=2)
@@ -318,7 +318,7 @@ class MQTTWin:
             tk.Label(self.frame_area_enabled, text="AreaEnabled")
         self.label_area_enabled.pack(side="left",padx=2)
 
-        tk.Label(self.root, text="Joint Jog").grid(row=row, column=0, padx=2, pady=2, sticky="w")
+        # tk.Label(self.root, text="Joint Jog").grid(row=row, column=0, padx=2, pady=2, sticky="w")
         joint_names = ["J1", "J2", "J3", "J4", "J5", "J6"]
         joint_accelerate_settings = [
             {"elapsed": 0, "step": 0.1, "interval": 100},
@@ -328,17 +328,17 @@ class MQTTWin:
         for i, joint in enumerate(joint_names):
             frame = tk.Frame(self.root)
             frame.grid(row=row, column=2+i, padx=2, pady=2, sticky="ew")
-            tk.Label(frame, text=joint, width=2, anchor="e").pack(side="left", padx=10)
+            # tk.Label(frame, text=joint, width=2, anchor="e").pack(side="left", padx=10)
             btn_minus = AccelerateButton(frame, self.jog_joint_accel, (i, -1), 
                                          accelerate_settings=joint_accelerate_settings, text="-", width=1, state="disabled")
-            btn_minus.pack(side="left", expand=True, fill="x")
+            # btn_minus.pack(side="left", expand=True, fill="x")
             btn_plus = AccelerateButton(frame, self.jog_joint_accel, (i, 1),
                                          accelerate_settings=joint_accelerate_settings, text="+", width=1, state="disabled")
-            btn_plus.pack(side="left", expand=True, fill="x")
+            # btn_plus.pack(side="left", expand=True, fill="x")
             self.button["joint_jog"][joint] = {"minus": btn_minus, "plus": btn_plus}
         # TCP Jog
         row += 1
-        tk.Label(self.root, text="TCP Jog").grid(row=row, column=0, padx=2, pady=2, sticky="w")
+        # tk.Label(self.root, text="TCP Jog").grid(row=row, column=0, padx=2, pady=2, sticky="w")
         tcp_names = [" X", " Y", " Z", "RX", "RY", "RZ"]
         tcp_accelerate_settings = [
             {"elapsed": 0, "step": 0.1, "interval": 100},
@@ -349,24 +349,24 @@ class MQTTWin:
         for i, tcp in enumerate(tcp_names):
             frame = tk.Frame(self.root)
             frame.grid(row=row, column=2+i, padx=2, pady=2, sticky="ew")
-            tk.Label(frame, text=tcp, width=2, anchor="e").pack(side="left", padx=10)
+            # tk.Label(frame, text=tcp, width=2, anchor="e").pack(side="left", padx=10)
             btn_minus = AccelerateButton(frame, self.jog_tcp_accel, (i, -1),
                                          accelerate_settings=tcp_accelerate_settings, text="-", width=1, state="disabled")
-            btn_minus.pack(side="left", expand=True, fill="x")
+            # btn_minus.pack(side="left", expand=True, fill="x")
             btn_plus = AccelerateButton(frame, self.jog_tcp_accel, (i, 1),
                                          accelerate_settings=tcp_accelerate_settings, text="+", width=1, state="disabled")
-            btn_plus.pack(side="left", expand=True, fill="x")
+            # btn_plus.pack(side="left", expand=True, fill="x")
             self.button["tcp_jog"][tcp] = {"minus": btn_minus, "plus": btn_plus}
         row += 1
 
-        tk.Label(self.root, text="State").grid(
-            row=row, column=0, padx=2, pady=10, sticky="w", columnspan=4)
+        # tk.Label(self.root, text="State").grid(
+            # row=row, column=0, padx=2, pady=10, sticky="w", columnspan=4)
         self.string_var_states = {}
         for i in range(6):
             frame_state = tk.Frame(self.root)
             frame_state.grid(row=row+1+i, column=0, padx=2, pady=2, sticky="ew", columnspan=2)
             label_target = tk.Label(frame_state, text=f"J{i + 1}")
-            label_target.pack(side="left", padx=10)
+            # label_target.pack(side="left", padx=10)
             string_var_state = tk.StringVar()
             string_var_state.set("")
             self.string_var_states[f"J{i + 1}"] = string_var_state
@@ -378,7 +378,7 @@ class MQTTWin:
                 bd=1,
                 anchor="e",
             )
-            text_box_state.pack(side="right", padx=2, expand=True, fill="x")
+            # text_box_state.pack(side="right", padx=2, expand=True, fill="x")
 
         frame_state = tk.Frame(self.root)
         frame_state.grid(row=row+1, column=4, padx=2, pady=2, sticky="ew", columnspan=2)
@@ -402,7 +402,7 @@ class MQTTWin:
             frame_state = tk.Frame(self.root)
             frame_state.grid(row=row+1+i, column=2, padx=2, pady=2, sticky="ew", columnspan=2)
             label_target = tk.Label(frame_state, text=f"{tcp_names[i]}")
-            label_target.pack(side="left", padx=10)
+            # label_target.pack(side="left", padx=10)
             string_var_state = tk.StringVar()
             string_var_state.set("")
             self.string_var_states_tcp[i] = string_var_state
@@ -414,17 +414,17 @@ class MQTTWin:
                 bd=1,
                 anchor="e",
             )
-            text_box_state.pack(side="right", padx=2, expand=True, fill="x")
+            # text_box_state.pack(side="right", padx=2, expand=True, fill="x")
 
-        tk.Label(self.root, text="Target").grid(
-            row=row, column=6, padx=2, pady=2, sticky="w", columnspan=4)
+        # tk.Label(self.root, text="Target").grid(
+            # row=row, column=6, padx=2, pady=2, sticky="w", columnspan=4)
         self.string_var_targets = {}
         for i in range(6):
             frame_target = tk.Frame(self.root)
             frame_target.grid(
                 row=row+1+i, column=6, padx=2, pady=2, sticky="ew", columnspan=2)
             label_target = tk.Label(frame_target, text=f"J{i + 1}")
-            label_target.pack(side="left", padx=10)
+            # label_target.pack(side="left", padx=10)
             string_var_target = tk.StringVar()
             string_var_target.set("")
             self.string_var_targets[f"J{i + 1}"] = string_var_target
@@ -436,12 +436,12 @@ class MQTTWin:
                 bd=1,
                 anchor="e",
             )
-            text_box_target.pack(side="right", padx=2, expand=True, fill="x")
+            # text_box_target.pack(side="right", padx=2, expand=True, fill="x")
 
         frame_target = tk.Frame(self.root)
         frame_target.grid(row=row+1, column=8, padx=2, pady=2, sticky="ew", columnspan=2)
         label_target = tk.Label(frame_target, text="grip")
-        label_target.pack(side="left", padx=10)
+        # label_target.pack(side="left", padx=10)
         string_var_target = tk.StringVar()
         string_var_target.set("")
         self.string_var_targets["grip"] = string_var_target
@@ -453,7 +453,7 @@ class MQTTWin:
             bd=1,
             anchor="e",
         )
-        text_box_target.pack(side="right", padx=2, expand=True, fill="x")
+        # text_box_target.pack(side="right", padx=2, expand=True, fill="x")
 
         row += 7
 

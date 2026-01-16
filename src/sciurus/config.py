@@ -1,6 +1,5 @@
 SHM_NAME = "sciurus"
 SHM_SIZE = 96
-# TODO: 適切な値に設定する
 N_JOINTS = 19
 ABS_JOINT_LIMIT = [360] * N_JOINTS
 T_INTV = 0.010
