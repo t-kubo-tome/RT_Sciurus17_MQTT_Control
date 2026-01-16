@@ -92,12 +92,16 @@ class MQTT_Recv:
 
             if "joints" in js:
                 joints = rad2deg_list(js["joints"])
-                # Receiving order
-                # waist(1), right_arm(7), right_hand(1), left_arm(7), left_hand(1)
-                # Memory order
-                # right_arm(7), right_hand(1), left_arm(7), left_hand(1), torso(waist, neck_yaw, neck_pitch, 3)
+                waist = joints[0:1]
+                left_arm = joints[1:8]
+                left_hand = joints[8:9]
+                right_arm = joints[9:16]
+                right_hand = joints[16:17]
                 # neck_yaw, neck_pitchは未使用なので状態値を入れる
-                joints = joints[1:] + joints[:1] + self.get_state_joint_memory()[17:19].tolist()
+                neck_yaw_pitch = self.get_state_joint_memory()[17:19].tolist()
+                joints = (
+                    right_arm + right_hand + left_arm + left_hand + waist + neck_yaw_pitch
+                )
                 self.set_target_joint_memory(joints)
                 self.pose[20] = 1
                 with self.mqtt_control_lock:
@@ -106,11 +110,11 @@ class MQTT_Recv:
                     self.mqtt_control_dict.clear()
                     self.mqtt_control_dict.update(js)
 
-            if "grip" in js:
-                if js['grip']:
-                    self.pose[13] = 1
-                else:
-                    self.pose[13] = 2
+            # if "grip" in js:
+            #     if js['grip']:
+            #         self.pose[13] = 1
+            #     else:
+            #         self.pose[13] = 2
             
             if "tool_change" in js:
                 if self.pose[17] == 0:
