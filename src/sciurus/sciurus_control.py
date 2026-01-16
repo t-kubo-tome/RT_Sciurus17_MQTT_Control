@@ -195,6 +195,20 @@ class Sciurus_CON:
         self.pose[24:30] = joint[:6]
         self.pose[76:89] = joint[6:19]
 
+    def real_to_vr_joint(self, joints: List[float]) -> List[float]:
+        joints = deg2rad_list(joints)
+        right_arm = joints[0:7]
+        right_hand = joints[7:8]
+        left_arm = joints[8:15]
+        left_hand = joints[15:16]
+        waist = joints[16:17]
+        neck_yaw_pitch = joints[17:19]
+        # neck_yaw, neck_pitchはVRでは未使用
+        joints = (
+            waist + left_arm + left_hand + right_arm + right_hand
+        )
+        return joints
+
     def monitor_loop(self):
         # ロボット固有の処理を含む
         last = 0
@@ -231,7 +245,7 @@ class Sciurus_CON:
             if actual_joint is not None:
                 self.set_state_joint_memory(actual_joint)
                 self.pose[19] = 1
-                actual_joint_js["joints"] = list(actual_joint)
+                actual_joint_js["joints"] = self.real_to_vr_joint(actual_joint)
 
             actual_joint_js["time"] = now
 

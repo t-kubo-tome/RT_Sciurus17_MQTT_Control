@@ -1,6 +1,6 @@
 # MQTTを受信する
 
-
+from typing import List
 import json
 import logging
 from paho.mqtt import client as mqtt
@@ -86,22 +86,26 @@ class MQTT_Recv:
         self.pose[6:12] = joint[:6]
         self.pose[63:76] = joint[6:19]
 
+    def vr_to_real_joint(self, joints: List[float]) -> List[float]:
+        joints = rad2deg_list(joints)
+        waist = joints[0:1]
+        left_arm = joints[1:8]
+        left_hand = joints[8:9]
+        right_arm = joints[9:16]
+        right_hand = joints[16:17]
+        # neck_yaw, neck_pitchはVRでは未使用なので状態値を入れる
+        neck_yaw_pitch = self.get_state_joint_memory()[17:19].tolist()
+        joints = (
+            right_arm + right_hand + left_arm + left_hand + waist + neck_yaw_pitch
+        )
+        return joints
+
     def on_message(self, client, userdata, msg):
         if msg.topic == self.mqtt_ctrl_topic:
             js = json.loads(msg.payload)
 
             if "joints" in js:
-                joints = rad2deg_list(js["joints"])
-                waist = joints[0:1]
-                left_arm = joints[1:8]
-                left_hand = joints[8:9]
-                right_arm = joints[9:16]
-                right_hand = joints[16:17]
-                # neck_yaw, neck_pitchは未使用なので状態値を入れる
-                neck_yaw_pitch = self.get_state_joint_memory()[17:19].tolist()
-                joints = (
-                    right_arm + right_hand + left_arm + left_hand + waist + neck_yaw_pitch
-                )
+                joints = self.vr_to_real_joint(js["joints"])
                 self.set_target_joint_memory(joints)
                 self.pose[20] = 1
                 with self.mqtt_control_lock:
