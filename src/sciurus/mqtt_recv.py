@@ -17,6 +17,7 @@ import sys
 import uuid
 
 from .config import SHM_NAME, SHM_SIZE
+from .utils import rad2deg_list
 
 from dotenv import load_dotenv
 
@@ -78,16 +79,32 @@ class MQTT_Recv:
         if reason_code != 0:
             self.logger.warning("MQTT Unexpected disconnection.")
 
+    def get_state_joint_memory(self) -> np.ndarray:
+        return np.concatenate([self.pose[:6], self.pose[50:63]])
+
+    def set_target_joint_memory(self, joint: np.ndarray) -> None:
+        self.pose[6:12] = joint[:6]
+        self.pose[63:76] = joint[6:19]
+
     def on_message(self, client, userdata, msg):
         if msg.topic == self.mqtt_ctrl_topic:
             js = json.loads(msg.payload)
 
-            # TODO: 追加関節対応
-            raise NotImplementedError("追加関節対応が未実装です")
-            joints=['j1','j2','j3','j4','j5','j6']
-            rot =[js[x]  for x in joints]    
-            joint_q = [x for x in rot]
-            self.pose[6:12] = joint_q 
+            if "joints" in js:
+                joints = rad2deg_list(js["joints"])
+                # Receiving order
+                # waist(1), right_arm(7), right_hand(1), left_arm(7), left_hand(1)
+                # Memory order
+                # right_arm(7), right_hand(1), left_arm(7), left_hand(1), torso(waist, neck_yaw, neck_pitch, 3)
+                # neck_yaw, neck_pitchは未使用なので状態値を入れる
+                joints = joints[1:] + joints[:1] + self.get_state_joint_memory()[17:19].tolist()
+                self.set_target_joint_memory(joints)
+                self.pose[20] = 1
+                with self.mqtt_control_lock:
+                    js["topic_type"] = "control"
+                    js["topic"] = msg.topic
+                    self.mqtt_control_dict.clear()
+                    self.mqtt_control_dict.update(js)
 
             if "grip" in js:
                 if js['grip']:

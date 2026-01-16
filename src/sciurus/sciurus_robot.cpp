@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -20,7 +21,8 @@ void Robot::connect(int baudrate) {
   if (!hardware.connect(baudrate)) {
     throw std::runtime_error("ロボットとの接続に失敗しました.");
   }
-  std::string config_file = "config/sciurus17.yaml";
+  std::filesystem::path config_path = std::filesystem::path(__FILE__).parent_path() / "config/sciurus17.yaml";
+  std::string config_file = config_path.string();
   if (!hardware.load_config_file(config_file)) {
     throw std::runtime_error("コンフィグファイルの読み込みに失敗しました.");
   }

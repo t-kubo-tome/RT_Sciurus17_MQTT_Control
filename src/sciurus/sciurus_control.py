@@ -27,7 +27,7 @@ from .interpolate import DelayedInterpolator
 # Robot specific modules
 from .config import N_JOINTS, SHM_NAME, SHM_SIZE, ABS_JOINT_LIMIT, T_INTV
 from .sciurus_monitor import MQTT_ROBOT_STATE_TOPIC
-from .sciurus_robot import SciurusRobot, ROBOT_STATE
+from .sciurus_robot import SciurusRobot
 from .sciurus_tools import tool_infos, tool_classes, tool_base
 
 
@@ -78,7 +78,13 @@ n_windows *= int(0.008 / t_intv)
 reset_default_state = True
 default_joints = {
     # 初期位置
+    # Sciurus home position
     "tidy": [-0.53, -90.09, -0.09, 156.27, -0.18, -119.44, -0.09, 0.09, 0.44, 90.0, 0.0, -155.65, -0.44, 119.8, -0.09, 0.09, 0.09, -0.09, -0.18],
+    # VR default position
+    "vr": [-2.2500000e+01, 4.5000000e+01, -4.5000000e+01, 2.7000000e+02, 0.0000000e+00,
+           0.0000000e+00, 0.0000000e+00, -6.7500000e+01, 2.2500000e+01, -4.5000000e+01,
+           4.5000000e+01, -2.7000000e+02, 0.0000000e+00, 0.0000000e+00, 0.0000000e+00,
+           6.7500000e+01, 0.0000000e+00, -8.7890625e-02, -1.7578125e-01],
     # # NOTE: j5の基準がVRと実機とでずれているので補正。将来的にはVR側で修正?
     # "vr": [159.3784, 10.08485, 122.90902, 151.10866, -43.20116 + 90, 20.69275],
     # # NOTE: 2025/04/18 19:25の新しい位置?VRとの対応がおかしい気がする
@@ -150,15 +156,14 @@ class StopWatch:
 
 class Sciurus_CON:
     def __init__(self):
-        self.default_joint = default_joints["tidy"]
-        self.tidy_joint = default_joints["tidy"]
+        self.tidy_joint = default_joints["vr"]
         self.robot: SciurusRobot | None = None
 
     def init_robot(self):
         # ロボット固有の処理を含む
         try:
             if self.robot is None:
-                self.robot = SciurusRobot(ROBOT_IP, "queue")
+                self.robot = SciurusRobot()
                 self.robot.connect()
                 self.init_monitor_loop()
             tool_id = int(os.environ["TOOL_ID"])
@@ -177,21 +182,14 @@ class Sciurus_CON:
             self.monitor_thread.join()
 
     def get_state_joint_memory(self) -> np.ndarray:
-        return np.concatenate([self.pose[:6].copy(), self.pose[50:63].copy()])
+        return np.concatenate([self.pose[:6], self.pose[50:63]])
 
     def set_state_joint_memory(self, joint: np.ndarray) -> None:
         self.pose[:6] = joint[:6]
         self.pose[50:63] = joint[6:19]
 
     def get_target_joint_memory(self) -> np.ndarray:
-        return np.concatenate([self.pose[6:12].copy(), self.pose[63:76].copy()])
-    
-    def set_target_joint_memory(self, joint: np.ndarray) -> None:
-        self.pose[6:12] = joint[:6]
-        self.pose[63:76] = joint[6:19]
-    
-    def get_control_joint_memory(self) -> np.ndarray:
-        return np.concatenate([self.pose[24:30].copy(), self.pose[76:89].copy()])
+        return np.concatenate([self.pose[6:12], self.pose[63:76]])
 
     def set_control_joint_memory(self, joint: np.ndarray) -> None:
         self.pose[24:30] = joint[:6]
@@ -221,7 +219,11 @@ class Sciurus_CON:
             actual_joint_js = {}
             # 関節
             try:
-                actual_joint = rad2deg_list(self.robot.get_current_joint())
+                is_in_servo_mode = bool(self.pose[14])
+                if is_in_servo_mode:
+                    actual_joint = rad2deg_list(self.robot.get_current_joint_servo())
+                else:
+                    actual_joint = rad2deg_list(self.robot.get_current_joint())
             except Exception as e:
                 self.logger.error(f"{self.format_error(e)}")
                 actual_joint = None
@@ -892,6 +894,8 @@ class Sciurus_CON:
             else:
                 raise ValueError
 
+            self.edit_control(control)
+
             sw.lap("Put control to shared memory")
             self.set_control_joint_memory(control)
 
@@ -990,6 +994,12 @@ class Sciurus_CON:
             raise error_info['exception']
         return True
 
+    def edit_control(self, control: List[float]) -> None:
+        pass
+        # # 制御値を強制的に上書きしたい場合に用いる
+        # state = self.get_state_joint_memory()
+        # control[17:19] = state[17:19]
+
     def move_joint_servo(
         self,
         control: List[float],
@@ -1045,6 +1055,7 @@ class Sciurus_CON:
         self.logger.info("Enabling robot")
         try:
             self.robot.enable()
+            self.pose[49] = 1
             return True
         except Exception as e:
             self.logger.error("Error enabling robot")
@@ -1055,6 +1066,7 @@ class Sciurus_CON:
         self.logger.info("Disabling robot")
         try:
             self.robot.disable()
+            self.pose[49] = 0
         except Exception as e:
             self.logger.error("Error disabling robot")
             self.logger.error(f"{self.format_error(e)}")
@@ -1980,7 +1992,7 @@ class Sciurus_CON:
 
     def del_robot(self) -> None:
         self.robot.disable()
-        self.robot.stop()
+        self.robot.disconnect()
 
     def run_proc(self, control_pipe, slave_mode_lock, log_queue, logging_dir, control_to_archiver_queue, monitor_queue):
         self.setup_logger(log_queue)
@@ -2043,7 +2055,6 @@ class Sciurus_CON:
                     control_pipe.send({"status": status})
             if self.pose[32] == 1:
                 self.del_robot()
-                self.del_robot_log()
                 self.del_monitor_loop()
                 self.sm.close()
                 self.control_to_archiver_queue.close()
